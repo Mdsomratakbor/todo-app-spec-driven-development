@@ -33,6 +33,15 @@
       </mat-select>
     </mat-form-field>
 
+    <mat-form-field appearance="fill" class="full-width">
+      <mat-label>Priority</mat-label>
+      <mat-select formControlName="priority">
+        <mat-option value="low">Low</mat-option>
+        <mat-option value="medium">Medium</mat-option>
+        <mat-option value="high">High</mat-option>
+      </mat-select>
+    </mat-form-field>
+
     <div *ngIf="serverError" class="error-message">{{ serverError }}</div>
   </form>
 </mat-dialog-content>

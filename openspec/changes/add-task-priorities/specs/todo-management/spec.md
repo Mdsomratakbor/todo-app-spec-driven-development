@@ -120,3 +120,7 @@ The system SHALL allow an authenticated user to assign a priority (Low, Medium, 
 #### Scenario: Priority field in todo response
 - **WHEN** the system returns any TodoResponse
 - **THEN** the response SHALL include a `"priority"` field with value `"low"`, `"medium"`, or `"high"`
+
+## Validation Targets
+
+- REQ-TODO-006 is met when all 8 scenarios pass

@@ -3,6 +3,7 @@ using Cartographer.Core.Configuration;
 using TodoApi.Models.DTOs.Categories;
 using TodoApi.Models.DTOs.Todos;
 using TodoApi.Models.Entities;
+using TodoApi.Models.Enums;
 
 namespace TodoApi.Models.Mappings;
 
@@ -14,6 +15,7 @@ public class MappingProfile : Profile
             .ForMember(d => d.TodoCount, o => o.Ignore());
 
         cfg.CreateMap<Todo, TodoResponse>()
-            .ForMember(d => d.CategoryName, o => o.MapFrom(s => s.Category != null ? s.Category.Name : null));
+            .ForMember(d => d.CategoryName, o => o.MapFrom(s => s.Category != null ? s.Category.Name : null))
+            .ForMember(d => d.Priority, o => o.MapFrom(s => s.Priority.ToString().ToLower()));
     }
 }

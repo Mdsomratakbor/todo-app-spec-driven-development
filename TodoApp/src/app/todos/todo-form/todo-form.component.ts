@@ -53,7 +53,8 @@ export class TodoFormComponent implements OnInit {
     ],
     description: [this.todo?.description ?? ''],
     dueDate: [this.todo?.dueDate ?? null as string | null],
-    categoryId: [this.todo?.categoryId ?? '']
+    categoryId: [this.todo?.categoryId ?? ''],
+    priority: [this.todo?.priority ?? 'medium']
   });
 
   ngOnInit(): void {
@@ -71,7 +72,8 @@ export class TodoFormComponent implements OnInit {
       title: raw.title,
       description: raw.description || null,
       dueDate: raw.dueDate || null,
-      categoryId: raw.categoryId || null
+      categoryId: raw.categoryId || null,
+      priority: raw.priority || 'medium'
     };
 
     const obs = this.isEdit

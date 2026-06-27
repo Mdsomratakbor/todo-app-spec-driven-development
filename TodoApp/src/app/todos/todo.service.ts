@@ -16,6 +16,9 @@ export class TodoService {
       if (filter.dueBefore) params = params.set('dueBefore', filter.dueBefore);
       if (filter.dueAfter) params = params.set('dueAfter', filter.dueAfter);
       if (filter.search) params = params.set('search', filter.search);
+      if (filter.priority) params = params.set('priority', filter.priority);
+      if (filter.sortBy) params = params.set('sortBy', filter.sortBy);
+      if (filter.sortDirection) params = params.set('sortDirection', filter.sortDirection);
     }
     return this.http.get<ApiResponse<Todo[]>>(`${ApiConfig.baseUrl}/todos`, { params })
       .pipe(map(res => res.data ?? []));

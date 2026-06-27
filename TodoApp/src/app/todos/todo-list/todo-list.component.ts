@@ -57,12 +57,15 @@ export class TodoListComponent implements OnInit, OnDestroy {
 
   todos: Todo[] = [];
   categories: Category[] = [];
-  displayedColumns = ['select', 'title', 'category', 'dueDate', 'createdAt', 'actions'];
+  displayedColumns = ['select', 'title', 'category', 'priority', 'dueDate', 'createdAt', 'actions'];
   loading = false;
 
   searchTerm = '';
   statusFilter: '' | 'pending' | 'completed' = '';
   categoryFilter = '';
+  priorityFilter = '';
+  sortBy = '';
+  sortDirection: 'asc' | 'desc' = 'asc';
   dueAfter: string | null = null;
   dueBefore: string | null = null;
 
@@ -98,6 +101,11 @@ export class TodoListComponent implements OnInit, OnDestroy {
     else if (this.statusFilter === 'pending') filter.isCompleted = false;
 
     if (this.categoryFilter) filter.categoryId = this.categoryFilter;
+    if (this.priorityFilter) filter.priority = this.priorityFilter;
+    if (this.sortBy) {
+      filter.sortBy = this.sortBy;
+      filter.sortDirection = this.sortDirection;
+    }
     if (this.dueAfter) filter.dueAfter = this.dueAfter;
     if (this.dueBefore) filter.dueBefore = this.dueBefore;
     if (this.searchTerm.trim()) filter.search = this.searchTerm.trim();
@@ -105,6 +113,22 @@ export class TodoListComponent implements OnInit, OnDestroy {
     this.todoService.getAll(filter)
       .pipe(finalize(() => this.loading = false))
       .subscribe(todos => this.todos = todos);
+  }
+
+  togglePrioritySort(): void {
+    this.sortBy = 'priority';
+    this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+    this.loadTodos();
+  }
+
+  priorityLabel(p: string): string {
+    const map: Record<string, string> = { low: 'Low', medium: 'Medium', high: 'High' };
+    return map[p] ?? p;
+  }
+
+  priorityColor(p: string): string {
+    const map: Record<string, string> = { low: 'green', medium: 'orange', high: 'red' };
+    return map[p] ?? 'grey';
   }
 
   isOverdue(todo: Todo): boolean {

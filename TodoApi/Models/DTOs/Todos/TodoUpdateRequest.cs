@@ -15,4 +15,6 @@ public class TodoUpdateRequest
     public bool? IsCompleted { get; set; }
 
     public Guid? CategoryId { get; set; }
+
+    public string? Priority { get; set; }
 }

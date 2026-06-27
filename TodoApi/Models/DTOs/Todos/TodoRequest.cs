@@ -14,4 +14,6 @@ public class TodoRequest
     public DateTime? DueDate { get; set; }
 
     public Guid? CategoryId { get; set; }
+
+    public string? Priority { get; set; }
 }

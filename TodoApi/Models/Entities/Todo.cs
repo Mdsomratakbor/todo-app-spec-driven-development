@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Identity;
+using TodoApi.Models.Enums;
 
 namespace TodoApi.Models.Entities;
 
@@ -9,6 +10,7 @@ public class Todo
     public string? Description { get; set; }
     public bool IsCompleted { get; set; }
     public DateTime? DueDate { get; set; }
+    public TodoPriority Priority { get; set; } = TodoPriority.Medium;
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
     public string UserId { get; set; } = string.Empty;

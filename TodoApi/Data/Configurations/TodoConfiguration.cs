@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using TodoApi.Models.Entities;
+using TodoApi.Models.Enums;
 
 namespace TodoApi.Data.Configurations;
 
@@ -21,6 +23,12 @@ public class TodoConfiguration : IEntityTypeConfiguration<Todo>
 
         builder.Property(t => t.Description)
             .HasMaxLength(2000);
+
+        builder.Property(t => t.Priority)
+            .IsRequired()
+            .HasConversion(new EnumToStringConverter<TodoPriority>())
+            .HasColumnType("VARCHAR(6)")
+            .HasDefaultValue(TodoPriority.Medium);
 
         builder.Property(t => t.IsCompleted)
             .HasDefaultValue(false);

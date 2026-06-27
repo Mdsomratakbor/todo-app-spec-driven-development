@@ -6,6 +6,7 @@ export interface Todo {
   dueDate: string | null;
   categoryId: string | null;
   categoryName: string | null;
+  priority: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -16,6 +17,9 @@ export interface TodoFilter {
   dueBefore?: string;
   dueAfter?: string;
   search?: string;
+  priority?: string;
+  sortBy?: string;
+  sortDirection?: string;
 }
 
 export interface TodoRequest {
@@ -23,6 +27,7 @@ export interface TodoRequest {
   description?: string | null;
   dueDate?: string | null;
   categoryId?: string | null;
+  priority?: string;
 }
 
 export interface TodoUpdateRequest {
@@ -31,4 +36,5 @@ export interface TodoUpdateRequest {
   dueDate?: string | null;
   isCompleted?: boolean;
   categoryId?: string | null;
+  priority?: string;
 }

@@ -5,6 +5,7 @@ using TodoApi.Data;
 using TodoApi.Extensions;
 using TodoApi.Models.DTOs.Todos;
 using TodoApi.Models.Entities;
+using TodoApi.Models.Enums;
 using TodoApi.Services.Interfaces;
 
 namespace TodoApi.Services;
@@ -43,6 +44,14 @@ public class TodoService : ITodoService
             }
         }
 
+        var priority = TodoPriority.Medium;
+        if (!string.IsNullOrWhiteSpace(request.Priority))
+        {
+            if (!Enum.TryParse<TodoPriority>(request.Priority, ignoreCase: true, out var parsed))
+                throw new BusinessException("Priority must be one of: low, medium, high");
+            priority = parsed;
+        }
+
         var now = DateTime.UtcNow;
         var todo = new Todo
         {
@@ -50,6 +59,7 @@ public class TodoService : ITodoService
             Title = request.Title,
             Description = request.Description,
             IsCompleted = false,
+            Priority = priority,
             DueDate = request.DueDate,
             CategoryId = request.CategoryId,
             UserId = userId,
@@ -128,12 +138,29 @@ public class TodoService : ITodoService
                 (t.Description != null && t.Description.ToLower().Contains(search)));
         }
 
-        var todos = await query
-            .OrderByDescending(t => t.CreatedAt)
-            .ToListAsync();
+        if (!string.IsNullOrWhiteSpace(filter.Priority))
+        {
+            if (Enum.TryParse<TodoPriority>(filter.Priority, ignoreCase: true, out var priority))
+                query = query.Where(t => t.Priority == priority);
+        }
 
-        _logger.LogInformation("User {UserId} searched todos with filters - completed:{IsCompleted} category:{CategoryId} search:{Search} -> {Count} results",
-            userId, filter.IsCompleted, filter.CategoryId, filter.Search, todos.Count);
+        if (!string.IsNullOrWhiteSpace(filter.SortBy) &&
+            filter.SortBy.Equals("priority", StringComparison.OrdinalIgnoreCase))
+        {
+            var descending = string.Equals(filter.SortDirection, "desc", StringComparison.OrdinalIgnoreCase);
+            query = descending
+                ? query.OrderByDescending(t => t.Priority)
+                : query.OrderBy(t => t.Priority);
+        }
+        else
+        {
+            query = query.OrderByDescending(t => t.CreatedAt);
+        }
+
+        var todos = await query.ToListAsync();
+
+        _logger.LogInformation("User {UserId} searched todos with filters - completed:{IsCompleted} category:{CategoryId} priority:{Priority} search:{Search} -> {Count} results",
+            userId, filter.IsCompleted, filter.CategoryId, filter.Priority, filter.Search, todos.Count);
 
         return todos.Select(t => _mapper.Map<TodoResponse>(t)).ToList();
     }
@@ -169,6 +196,13 @@ public class TodoService : ITodoService
 
         if (request.IsCompleted.HasValue)
             todo.IsCompleted = request.IsCompleted.Value;
+
+        if (request.Priority != null)
+        {
+            if (!Enum.TryParse<TodoPriority>(request.Priority, ignoreCase: true, out var priority))
+                throw new BusinessException("Priority must be one of: low, medium, high");
+            todo.Priority = priority;
+        }
 
         if (request.CategoryId != null)
         {

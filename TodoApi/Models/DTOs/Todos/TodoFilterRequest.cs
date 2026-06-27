@@ -7,4 +7,7 @@ public class TodoFilterRequest
     public DateTime? DueBefore { get; set; }
     public DateTime? DueAfter { get; set; }
     public string? Search { get; set; }
+    public string? Priority { get; set; }
+    public string? SortBy { get; set; }
+    public string? SortDirection { get; set; }
 }

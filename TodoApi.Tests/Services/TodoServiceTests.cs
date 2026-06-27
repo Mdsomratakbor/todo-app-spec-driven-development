@@ -7,6 +7,7 @@ using System.Security.Claims;
 using TodoApi.Data;
 using TodoApi.Models.DTOs.Todos;
 using TodoApi.Models.Entities;
+using TodoApi.Models.Enums;
 using TodoApi.Services;
 
 namespace TodoApi.Tests.Services;
@@ -40,6 +41,7 @@ public class TodoServiceTests
                 DueDate = t.DueDate,
                 CategoryId = t.CategoryId,
                 CategoryName = t.Category?.Name,
+                Priority = t.Priority.ToString().ToLower(),
                 CreatedAt = t.CreatedAt,
                 UpdatedAt = t.UpdatedAt
             });
@@ -511,5 +513,103 @@ public class TodoServiceTests
 
         Assert.Single(result);
         Assert.Equal("Meeting notes", result[0].Title);
+    }
+
+    [Fact]
+    public async Task CreateAsync_DefaultPriority_IsMedium()
+    {
+        using var db = CreateDbContext();
+        var service = new TodoService(db, _mapper.Object, _httpContextAccessor.Object, Mock.Of<ILogger<TodoService>>());
+
+        var result = await service.CreateAsync(new TodoRequest { Title = "Test" });
+
+        Assert.Equal("medium", result.Priority);
+    }
+
+    [Fact]
+    public async Task CreateAsync_WithExplicitPriority_SetsPriority()
+    {
+        using var db = CreateDbContext();
+        var service = new TodoService(db, _mapper.Object, _httpContextAccessor.Object, Mock.Of<ILogger<TodoService>>());
+
+        var result = await service.CreateAsync(new TodoRequest { Title = "High priority", Priority = "high" });
+
+        Assert.Equal("high", result.Priority);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_ChangesPriority()
+    {
+        using var db = CreateDbContext();
+        var todoId = Guid.NewGuid();
+        db.Todos.Add(new Todo
+        {
+            Id = todoId,
+            Title = "Task",
+            UserId = TestUserId,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        });
+        await db.SaveChangesAsync();
+
+        var service = new TodoService(db, _mapper.Object, _httpContextAccessor.Object, Mock.Of<ILogger<TodoService>>());
+
+        var result = await service.UpdateAsync(todoId, new TodoUpdateRequest { Priority = "low" });
+
+        Assert.Equal("low", result.Priority);
+    }
+
+    [Fact]
+    public async Task GetAllAsync_FilterByPriority_ReturnsFiltered()
+    {
+        using var db = CreateDbContext();
+        db.Todos.Add(new Todo { Id = Guid.NewGuid(), Title = "High task", Priority = TodoPriority.High, UserId = TestUserId, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow });
+        db.Todos.Add(new Todo { Id = Guid.NewGuid(), Title = "Low task", Priority = TodoPriority.Low, UserId = TestUserId, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow });
+        await db.SaveChangesAsync();
+
+        var service = new TodoService(db, _mapper.Object, _httpContextAccessor.Object, Mock.Of<ILogger<TodoService>>());
+
+        var result = await service.GetAllAsync(new TodoFilterRequest { Priority = "high" });
+
+        Assert.Single(result);
+        Assert.Equal("High task", result[0].Title);
+    }
+
+    [Fact]
+    public async Task GetAllAsync_SortByPriorityAsc_ReturnsSorted()
+    {
+        using var db = CreateDbContext();
+        db.Todos.Add(new Todo { Id = Guid.NewGuid(), Title = "Medium", Priority = TodoPriority.Medium, UserId = TestUserId, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow });
+        db.Todos.Add(new Todo { Id = Guid.NewGuid(), Title = "High", Priority = TodoPriority.High, UserId = TestUserId, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow });
+        db.Todos.Add(new Todo { Id = Guid.NewGuid(), Title = "Low", Priority = TodoPriority.Low, UserId = TestUserId, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow });
+        await db.SaveChangesAsync();
+
+        var service = new TodoService(db, _mapper.Object, _httpContextAccessor.Object, Mock.Of<ILogger<TodoService>>());
+
+        var result = await service.GetAllAsync(new TodoFilterRequest { SortBy = "priority", SortDirection = "asc" });
+
+        Assert.Equal(3, result.Count);
+        Assert.Equal("Low", result[0].Title);
+        Assert.Equal("Medium", result[1].Title);
+        Assert.Equal("High", result[2].Title);
+    }
+
+    [Fact]
+    public async Task GetAllAsync_SortByPriorityDesc_ReturnsSorted()
+    {
+        using var db = CreateDbContext();
+        db.Todos.Add(new Todo { Id = Guid.NewGuid(), Title = "Medium", Priority = TodoPriority.Medium, UserId = TestUserId, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow });
+        db.Todos.Add(new Todo { Id = Guid.NewGuid(), Title = "High", Priority = TodoPriority.High, UserId = TestUserId, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow });
+        db.Todos.Add(new Todo { Id = Guid.NewGuid(), Title = "Low", Priority = TodoPriority.Low, UserId = TestUserId, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow });
+        await db.SaveChangesAsync();
+
+        var service = new TodoService(db, _mapper.Object, _httpContextAccessor.Object, Mock.Of<ILogger<TodoService>>());
+
+        var result = await service.GetAllAsync(new TodoFilterRequest { SortBy = "priority", SortDirection = "desc" });
+
+        Assert.Equal(3, result.Count);
+        Assert.Equal("High", result[0].Title);
+        Assert.Equal("Medium", result[1].Title);
+        Assert.Equal("Low", result[2].Title);
     }
 }

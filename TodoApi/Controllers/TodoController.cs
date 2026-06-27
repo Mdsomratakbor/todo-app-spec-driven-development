@@ -43,7 +43,9 @@ public class TodoController : ControllerBase
             || filter.CategoryId.HasValue
             || filter.DueBefore.HasValue
             || filter.DueAfter.HasValue
-            || !string.IsNullOrWhiteSpace(filter.Search);
+            || !string.IsNullOrWhiteSpace(filter.Search)
+            || !string.IsNullOrWhiteSpace(filter.Priority)
+            || !string.IsNullOrWhiteSpace(filter.SortBy);
 
         _logger.LogDebug("List todos request (filters: {HasFilters})", hasFilters);
 

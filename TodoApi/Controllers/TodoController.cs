@@ -12,15 +12,18 @@ namespace TodoApi.Controllers;
 public class TodoController : ControllerBase
 {
     private readonly ITodoService _todoService;
+    private readonly ILogger<TodoController> _logger;
 
-    public TodoController(ITodoService todoService)
+    public TodoController(ITodoService todoService, ILogger<TodoController> logger)
     {
         _todoService = todoService;
+        _logger = logger;
     }
 
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] TodoRequest request)
     {
+        _logger.LogInformation("Create todo request: {TodoTitle}", request.Title);
         var result = await _todoService.CreateAsync(request);
 
         var response = new ApiResponse<TodoResponse>
@@ -42,6 +45,8 @@ public class TodoController : ControllerBase
             || filter.DueAfter.HasValue
             || !string.IsNullOrWhiteSpace(filter.Search);
 
+        _logger.LogDebug("List todos request (filters: {HasFilters})", hasFilters);
+
         var result = hasFilters
             ? await _todoService.GetAllAsync(filter)
             : await _todoService.GetAllAsync();
@@ -59,6 +64,7 @@ public class TodoController : ControllerBase
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetById(Guid id)
     {
+        _logger.LogDebug("Get todo by id: {TodoId}", id);
         var result = await _todoService.GetByIdAsync(id);
 
         var response = new ApiResponse<TodoResponse>
@@ -74,6 +80,7 @@ public class TodoController : ControllerBase
     [HttpPut("{id:guid}")]
     public async Task<IActionResult> Update(Guid id, [FromBody] TodoUpdateRequest request)
     {
+        _logger.LogInformation("Update todo request for {TodoId}", id);
         var result = await _todoService.UpdateAsync(id, request);
 
         var response = new ApiResponse<TodoResponse>
@@ -89,6 +96,7 @@ public class TodoController : ControllerBase
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> Delete(Guid id)
     {
+        _logger.LogInformation("Delete todo request for {TodoId}", id);
         await _todoService.DeleteAsync(id);
         return NoContent();
     }

@@ -1,0 +1,103 @@
+<mat-toolbar>
+  <span>Todos</span>
+  <span class="spacer"></span>
+  <button mat-raised-button color="primary" (click)="openAddDialog()">
+    <mat-icon>add</mat-icon> Add Todo
+  </button>
+</mat-toolbar>
+
+<div class="filter-bar">
+  <mat-form-field appearance="fill" subscriptSizing="dynamic">
+    <mat-label>Search</mat-label>
+    <input matInput [(ngModel)]="searchTerm" (input)="onSearchChange()" placeholder="Search todos..." />
+    <mat-icon matSuffix>search</mat-icon>
+  </mat-form-field>
+
+  <mat-button-toggle-group [(ngModel)]="statusFilter" (change)="loadTodos()">
+    <mat-button-toggle value="">All</mat-button-toggle>
+    <mat-button-toggle value="pending">Pending</mat-button-toggle>
+    <mat-button-toggle value="completed">Completed</mat-button-toggle>
+  </mat-button-toggle-group>
+
+  <mat-form-field appearance="fill" subscriptSizing="dynamic">
+    <mat-label>Category</mat-label>
+    <mat-select [(ngModel)]="categoryFilter" (selectionChange)="loadTodos()">
+      <mat-option value="">All</mat-option>
+      <mat-option *ngFor="let cat of categories" [value]="cat.id">{{ cat.name }}</mat-option>
+    </mat-select>
+  </mat-form-field>
+
+  <mat-form-field appearance="fill" subscriptSizing="dynamic">
+    <mat-label>Due after</mat-label>
+    <input matInput [matDatepicker]="afterPicker" [(ngModel)]="dueAfter" (dateChange)="loadTodos()" />
+    <mat-datepicker-toggle matSuffix [for]="afterPicker"></mat-datepicker-toggle>
+    <mat-datepicker #afterPicker></mat-datepicker>
+  </mat-form-field>
+
+  <mat-form-field appearance="fill" subscriptSizing="dynamic">
+    <mat-label>Due before</mat-label>
+    <input matInput [matDatepicker]="beforePicker" [(ngModel)]="dueBefore" (dateChange)="loadTodos()" />
+    <mat-datepicker-toggle matSuffix [for]="beforePicker"></mat-datepicker-toggle>
+    <mat-datepicker #beforePicker></mat-datepicker>
+  </mat-form-field>
+</div>
+
+<div class="content">
+  <div *ngIf="loading" class="loading-container">
+    <mat-spinner diameter="40"></mat-spinner>
+  </div>
+
+  <div *ngIf="!loading && todos.length === 0" class="empty-state">
+    <mat-icon>checklist</mat-icon>
+    <p>No todos found. Create your first todo or adjust your filters.</p>
+  </div>
+
+  <table *ngIf="!loading && todos.length > 0" mat-table [dataSource]="todos" class="mat-elevation-z2">
+
+    <ng-container matColumnDef="select">
+      <th mat-header-cell *matHeaderCellDef class="checkbox-col"></th>
+      <td mat-cell *matCellDef="let todo" class="checkbox-col">
+        <mat-checkbox [checked]="todo.isCompleted" (change)="toggleCompletion(todo)"></mat-checkbox>
+      </td>
+    </ng-container>
+
+    <ng-container matColumnDef="title">
+      <th mat-header-cell *matHeaderCellDef>Title</th>
+      <td mat-cell *matCellDef="let todo" [class.completed]="todo.isCompleted" [class.overdue]="isOverdue(todo)">
+        {{ todo.title }}
+      </td>
+    </ng-container>
+
+    <ng-container matColumnDef="category">
+      <th mat-header-cell *matHeaderCellDef>Category</th>
+      <td mat-cell *matCellDef="let todo">{{ todo.categoryName || '-' }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="dueDate">
+      <th mat-header-cell *matHeaderCellDef>Due Date</th>
+      <td mat-cell *matCellDef="let todo" [class.overdue]="isOverdue(todo)">
+        {{ todo.dueDate ? (todo.dueDate | date:'mediumDate') : '-' }}
+      </td>
+    </ng-container>
+
+    <ng-container matColumnDef="createdAt">
+      <th mat-header-cell *matHeaderCellDef>Created</th>
+      <td mat-cell *matCellDef="let todo">{{ todo.createdAt | date:'mediumDate' }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="actions">
+      <th mat-header-cell *matHeaderCellDef>Actions</th>
+      <td mat-cell *matCellDef="let todo">
+        <button mat-icon-button color="primary" (click)="openEditDialog(todo)" matTooltip="Edit">
+          <mat-icon>edit</mat-icon>
+        </button>
+        <button mat-icon-button color="warn" (click)="deleteTodo(todo)" matTooltip="Delete">
+          <mat-icon>delete</mat-icon>
+        </button>
+      </td>
+    </ng-container>
+
+    <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+    <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+  </table>
+</div>

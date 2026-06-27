@@ -1,196 +1,84 @@
 # Mid-Point Report — todo-app
 
-**Date:** 2026-06-27 (updated — Gate 2 re-check after Phase 4)
+**Date:** 2026-06-27 (updated — Gate 2 re-check after Phases 1-7)
 **Change:** todo-app
+**Branch:** change/frontend-setup (based on develop)
 
 ## Progress Summary
 
 | Metric | Value |
 |---|---|
-| Tasks completed | 21 / 52 |
-| Tasks remaining | 31 |
-| Completion | 40.4% |
+| Tasks completed | 41 / 52 |
+| Tasks remaining | 11 |
+| Completion | 78.8% |
 
 ## What Was Implemented
 
-### Task 1.1 — Create .NET solution and Web API project
-- Created `TodoApp.slnx` (.NET 10 solution file in `.slnx` format)
-- Created `TodoApi/` project with `TodoApi.csproj` targeting net10.0
-- Created full folder structure per design.md: `Controllers/`, `Models/Entities/`, `Models/DTOs/Auth/`, `Models/DTOs/Todos/`, `Models/DTOs/Categories/`, `Models/Mappings/`, `Services/Interfaces/`, `Data/Configurations/`, `Middleware/`
-- Removed default template files (`WeatherForecast.cs`, `WeatherForecastController.cs`, `TodoApi.http`)
-- Cleaned `Program.cs` (removed OpenAPI references per design)
-- Solution builds with 0 warnings, 0 errors
+### Phase 1 — Backend Solution Setup (Tasks 1.1-1.6) ✅
+- .NET 10 solution `TodoApp.slnx` + `TodoApi.csproj`
+- 6 NuGet packages: EF Core, PostgreSQL, JWT Bearer, Identity, Cartographer.Mapper 0.2.0, FluentResponse.ApiWrapper 1.0.0
+- JWT authentication configured (issuer, audience, signing key, 24h expiry)
+- CORS policy `AllowAngularDev` for `http://localhost:4200`
+- Cartographer.Mapper mapping profile registered
+- FluentResponse.ApiWrapper middleware (exception handler, correlation ID)
 
-### Task 1.2 — Add NuGet packages
-All 6 required packages added to `TodoApi.csproj`:
-- `Microsoft.EntityFrameworkCore` 10.0.9
-- `Npgsql.EntityFrameworkCore.PostgreSQL` 10.0.2
-- `Microsoft.AspNetCore.Authentication.JwtBearer` 10.0.9
-- `Microsoft.AspNetCore.Identity.EntityFrameworkCore` 10.0.9
-- `Cartographer.Mapper` 0.2.0
-- `FluentResponse.ApiWrapper` 1.0.0
-- All packages restored successfully, build passes
+### Phase 2 — Data Layer (Tasks 2.1-2.4) ✅
+- `Category` entity with unique index on (Name, UserId), max length 50
+- `Todo` entity with 4 composite indexes (UserId + CreatedAt/IsCompleted/CategoryId/DueDate)
+- `AppDbContext` extending `IdentityDbContext<IdentityUser>`
+- EF Core migration with 9 tables (Identity + Categories + Todos)
 
-### Task 1.3 — Configure JWT authentication in Program.cs
-- JWT bearer token configured in `Program.cs` with `AddAuthentication().AddJwtBearer()`
-- Token validation parameters: ValidateIssuer, ValidateAudience, ValidateLifetime, ValidateIssuerSigningKey
-- Issuer, Audience, SigningKey read from `appsettings.json` configuration
-- `UseAuthentication()` and `UseAuthorization()` middleware added to pipeline
-- JWT section added to `appsettings.json` with Key, Issuer, Audience, ExpiryInHours (24h)
+### Phase 3 — Auth API (Tasks 3.1-3.6) ✅
+- DTOs: RegisterRequest, LoginRequest, AuthResponse (with data annotations)
+- IAuthService + AuthService: RegisterAsync (ConflictException 409 on duplicate), LoginAsync (UnauthorizedException 401), JWT generation with user ID/name claims
+- AuthController: POST `/api/v1/auth/register` (201), `/api/v1/auth/login` (200)
+- `ClaimsPrincipalExtensions.GetUserId()` helper
 
-### Task 1.4 — Configure CORS and controller routing
-- CORS policy `AllowAngularDev` configured for `http://localhost:4200`
-- `UseCors()` placed before `UseAuthentication()` in middleware pipeline
-- `AddControllers()` and `MapControllers()` already present from template
+### Phase 4 — Categories API (Tasks 4.1-4.5) ✅
+- DTOs: CategoryRequest (Name required, 1-50 chars), CategoryResponse (Id, Name, TodoCount, CreatedAt)
+- ICategoryService + CategoryService: full CRUD with duplicate check per user, cascade protection, TodoCount computed
+- CategoryController: POST/GET/PUT/DELETE `/api/v1/categories`
 
-### Task 1.5 — Create Cartographer.Mapper mapping profile
-- `Models/Mappings/MappingProfile.cs` created with Profile class and `ConfigureMappings` method
-- Cartographer registered via `AddCartographer()` with profile applied
-- Actual entity-to-DTO mappings will be added in Tasks 4.1 and 5.1
+### Phase 5 — Todos API (Tasks 5.1-5.7) ✅
+- DTOs: TodoRequest, TodoResponse, TodoFilterRequest, TodoUpdateRequest
+- ITodoService + TodoService: full CRUD with AND filter logic (5 dimensions), partial updates, Guid.Empty sentinel for category removal
+- TodoController: POST/GET `/api/v1/todos`, GET/PUT/DELETE `/api/v1/todos/{id}`
+- 67 tests (AuthService 6, CategoryService 11, TodoService 16, validation 9, ClaimsPrincipal 3, entities 8, DbContext 5, mappings 2) — all passing; 46/47 spec scenarios covered
 
-### Task 1.6 — Configure FluentResponse.ApiWrapper
-- `AddFluentResponse()` registered in DI
-- `UseFluentResponseExceptionHandler()` middleware added (global exception handling)
-- `UseFluentResponseCorrelationId()` middleware added
+### Phase 6 — Frontend Setup (Tasks 6.1-6.5) ✅
+- Angular 21 project (`ng new TodoApp --routing --style=scss --standalone`)
+- Angular Material 21.2.14 with M3 theme (azure/blue)
+- Shared models: `ApiResponse<T>`, `AuthResponse`, `ApiConfig` (base URL `http://localhost:5000/api/v1`)
+- Auth interceptor (attaches JWT, 401 → redirect to login)
+- Route config + AuthGuard: `/login`, `/register`, `/todos` (guarded), `/categories` (guarded), `/` → `/todos`
+
+### Phase 7 — Authentication UI (Tasks 7.1-7.4) ✅
+- AuthService: login/register HTTP calls with token storage in localStorage
+- LoginComponent: reactive form, username/password fields, 401→"Invalid credentials", snackbar on network error
+- RegisterComponent: reactive form with password match validator, MinLength(6), 409→"Username already taken", 400→field-level errors
+
+## Additional Changes
+- Swagger/OpenAPI: installed `Swashbuckle.AspNetCore` 10.2.3, configured `AddSwaggerGen()` + `UseSwagger()`/`UseSwaggerUI()`
+- Backend port changed from 5141 → 5000 to match frontend ApiConfig
+- `.gitkeep` added to `TodoApi/Middleware/` to track empty directory
+- Default Angular welcome template replaced with clean `<router-outlet />`
+- Frontend branch `change/frontend-setup` created from `develop`
 
 ## Deviations from Spec
 
 - **None.** All implementation follows the approved design.md, tasks.md, and spec files.
+- Swagger config was not in original spec — added at user request for API testing.
 
-## Files Created/Modified
+## Remaining Work
 
-| File | Action |
-|---|---|
-| `TodoApp.slnx` | Created |
-| `TodoApi/TodoApi.csproj` | Created |
-| `TodoApi/Program.cs` | Created, modified (Tasks 1.3, 1.4, 1.5, 1.6) |
-| `TodoApi/appsettings.json` | Created, modified (Task 1.3) |
-| `TodoApi/Properties/launchSettings.json` | Created (template default) |
-| `TodoApi/Models/Mappings/MappingProfile.cs` | Created (Task 1.5) |
-| `TodoApi/Controllers/` (empty) | Created |
-| `TodoApi/Models/Entities/` (empty) | Created |
-| `TodoApi/Models/DTOs/Auth/` (empty) | Created |
-| `TodoApi/Models/DTOs/Todos/` (empty) | Created |
-| `TodoApi/Models/DTOs/Categories/` (empty) | Created |
-| `TodoApi/Models/Mappings/` | Created |
-| `TodoApi/Services/Interfaces/` (empty) | Created |
-| `TodoApi/Data/Configurations/` (empty) | Created |
-| `TodoApi/Middleware/` (empty) | Created |
-| `TodoApi/Data/AppDbContext.cs` | Created (Task 2.3) |
-| `TodoApi/Data/Configurations/CategoryConfiguration.cs` | Created (Task 2.1) |
-| `TodoApi/Data/Configurations/TodoConfiguration.cs` | Created (Task 2.2) |
-| `TodoApi/Data/Migrations/20260627093223_InitialCreate.cs` | Created (Task 2.4) |
-| `TodoApi/Models/Entities/Category.cs` | Created (Task 2.1) |
-| `TodoApi/Models/Entities/Todo.cs` | Created (Task 2.2) |
-| `TodoApi/Models/DTOs/Auth/RegisterRequest.cs` | Created (Task 3.1) |
-| `TodoApi/Models/DTOs/Auth/LoginRequest.cs` | Created (Task 3.1) |
-| `TodoApi/Models/DTOs/Auth/AuthResponse.cs` | Created (Task 3.1) |
-| `TodoApi/Services/Interfaces/IAuthService.cs` | Created (Task 3.2) |
-| `TodoApi/Services/AuthService.cs` | Created (Tasks 3.2, 3.3) |
-| `TodoApi/Controllers/AuthController.cs` | Created (Tasks 3.4, 3.5) |
-| `TodoApi/Extensions/ClaimsPrincipalExtensions.cs` | Created (Task 3.6) |
-| `TodoApi.Tests/TodoApi.Tests.csproj` | Created (Gate 3 fix) |
-| `TodoApi.Tests/Entities/CategoryTests.cs` | Created (Gate 3 fix) |
-| `TodoApi.Tests/Entities/TodoTests.cs` | Created (Gate 3 fix) |
-| `TodoApi.Tests/Data/AppDbContextTests.cs` | Created (Gate 3 fix) |
-| `TodoApi.Tests/Mappings/MappingProfileTests.cs` | Created (Gate 3 fix) |
-| `TodoApi.Tests/Services/AuthServiceTests.cs` | Created (Task 3.2) |
-| `TodoApi.Tests/Extensions/ClaimsPrincipalExtensionsTests.cs` | Created (Task 3.6) |
-| `openspec/changes/todo-app/regression-plan.md` | Created (Gate 3 fix) |
-| `GLOBAL_RULES.md` | Created |
-| `openspec/changes/todo-app/midpoint-report.md` | Created, updated |
+### Phase 8 — Categories UI (4 tasks) ✅
+- CategoryService, CategoryListComponent, CategoryFormComponent, delete confirmation dialog — all done
 
-### Task 2.1 — Create Entity: Category
-- Created `Models/Entities/Category.cs` with Id, Name, UserId, CreatedAt properties
-- EF Core configuration sets table name, max length 50, unique index on (Name, UserId)
+### Phase 9 — Todo UI (6 tasks)
+- TodoService, TodoListComponent, TodoFormComponent/dialog, completion toggle, filter bar
 
-### Task 2.2 — Create Entity: Todo
-- Created `Models/Entities/Todo.cs` with all 9 properties + navigation properties
-- EF Core configuration sets 4 composite indexes on (UserId + CreatedAt/IsCompleted/CategoryId/DueDate)
-
-### Task 2.3 — Create AppDbContext
-- Created `Data/AppDbContext.cs` extending `IdentityDbContext<IdentityUser>`
-- DbSets for Todos and Categories, applies entity configurations in OnModelCreating
-
-### Task 2.4 — Create and apply initial EF Core migration
-- Created `Data/Migrations/20260627093223_InitialCreate.cs` with all 9 tables
-- Includes Identity tables, Categories, Todos with correct columns, indexes, FK constraints
-
-### Task 3.1 — Create Auth DTOs
-- Created `Models/DTOs/Auth/RegisterRequest.cs`, `LoginRequest.cs`, `AuthResponse.cs`
-- RegisterRequest: Username with [StringLength(256, MinimumLength=1)], Password with [MinLength(6)]
-- LoginRequest: Username and Password with [Required]
-- AuthResponse: Token, Username, ExpiresAt
-
-### Task 3.2 — Implement IAuthService and AuthService: Register
-- Created `Services/Interfaces/IAuthService.cs` with RegisterAsync and LoginAsync
-- Created `Services/AuthService.cs` — RegisterAsync uses UserManager, checks duplicates, throws ConflictException (409)
-- Registered in DI via `AddScoped<IAuthService, AuthService>()`
-
-### Task 3.3 — Implement AuthService: Login
-- LoginAsync validates credentials via UserManager.FindByNameAsync + CheckPasswordAsync
-- Throws UnauthorizedException (401) for invalid username or wrong password (same message — no info leakage)
-- JWT generation extracted as `GenerateAuthResponse` helper with user ID/name claims, 24h expiry
-
-### Task 3.4 — Create AuthController: Register endpoint
-- Created `Controllers/AuthController.cs` with [Route("api/v1/auth")]
-- POST `/api/v1/auth/register` returns 201 Created with FluentResponse.ApiWrapper envelope
-- Validation errors handled by [ApiController] model validation -> 400
-- Duplicate username -> ConflictException middleware -> 409
-
-### Task 3.5 — Create AuthController: Login endpoint
-- POST `/api/v1/auth/login` returns 200 OK with FluentResponse.ApiWrapper envelope
-- Invalid credentials -> UnauthorizedException middleware -> 401
-
-### Task 3.6 — Add user-scoped data access helper
-- Created `Extensions/ClaimsPrincipalExtensions.cs` with GetUserId() extension method
-- Extracts ClaimTypes.NameIdentifier from JWT claims, returns empty string if unauthenticated
-
-### Task 4.1 — Create Category DTOs
-- Created `Models/DTOs/Categories/CategoryRequest.cs` with Name (string, required, 1-50 chars via [StringLength(50, MinimumLength=1)])
-- Created `Models/DTOs/Categories/CategoryResponse.cs` with Id, Name, TodoCount, CreatedAt
-- Updated `MappingProfile.cs` with CreateMap<Category, CategoryResponse>, ignoring TodoCount (computed in service)
-
-### Task 4.2 — Implement ICategoryService: Create and List
-- Created `Services/Interfaces/ICategoryService.cs` with CreateAsync, GetAllAsync
-- Created `Services/CategoryService.cs` — CreateAsync checks duplicate name per user (case-insensitive), throws ConflictException (409)
-- GetAllAsync returns categories ordered alphabetically with TodoCount computed via GroupBy query
-- Added `AddHttpContextAccessor()` and scoped `ICategoryService` registration in Program.cs
-
-### Task 4.3 — Implement CategoryService: Update and Delete
-- UpdateAsync checks ownership (404 if not found/not owned), checks duplicate name (409 if conflict)
-- DeleteAsync checks for associated todos (409 if todos exist), removes category (204)
-- Both throw NotFoundException (404) for missing or unowned categories
-
-### Task 4.4 — Create CategoryController: Create and List
-- Created `Controllers/CategoryController.cs` with [Authorize] and [Route("api/v1/categories")]
-- POST `/api/v1/categories` returns 201 with ApiResponse<CategoryResponse>
-- GET `/api/v1/categories` returns 200 with ApiResponse<CategoryResponse[]>
-
-### Task 4.5 — Create CategoryController: Update and Delete
-- PUT `/api/v1/categories/{id}` returns 200 with ApiResponse<CategoryResponse>
-- DELETE `/api/v1/categories/{id}` returns 204 No Content
-- Error responses via FluentResponse exception middleware: 404 (NotFoundException), 409 (ConflictException), 400 (model validation)
-- Created `CategoryServiceTests.cs` with 11 tests covering all 12 spec scenarios
-- Tasks 4.1-4.5: Category DTOs, CategoryService, CategoryController
-
-### Todos API (7 tasks)
-- Tasks 5.1-5.7: Todo DTOs, TodoService, TodoController
-
-### Frontend Setup (5 tasks)
-- Tasks 6.1-6.5: Angular project, Material, API models, HttpClient/interceptor, routes/guard
-
-### Authentication UI (4 tasks)
-- Tasks 7.1-7.4: AuthService, LoginComponent, RegisterComponent
-
-### Categories UI (4 tasks)
-- Tasks 8.1-8.4: CategoryService, CategoryListComponent, CategoryFormComponent, delete confirmation
-
-### Todo UI (6 tasks)
-- Tasks 9.1-9.6: TodoService, TodoListComponent, TodoFormComponent, completion toggle
-
-### Validation (5 tasks)
-- Tasks 10.1-10.5: E2E tests for auth, categories, todos, filters, spec coverage
+### Phase 10 — Validation (5 tasks)
+- Validation tests for auth UI, categories UI, todos UI, filters, spec coverage verification
 
 ## Known Issues
 - None at this point.

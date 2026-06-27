@@ -8,6 +8,8 @@ using TodoApi.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddSwaggerGen();
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAngularDev", policy =>
@@ -59,6 +61,9 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     });
 
 var app = builder.Build();
+
+app.UseSwagger();
+app.UseSwaggerUI();
 
 var logger = app.Services.GetRequiredService<ILogger<Program>>();
 logger.LogInformation("Application starting with environment: {Env}", app.Environment.EnvironmentName);

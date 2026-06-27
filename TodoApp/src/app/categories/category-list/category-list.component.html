@@ -1,0 +1,51 @@
+<mat-toolbar>
+  <span>Categories</span>
+  <span class="spacer"></span>
+  <button mat-raised-button color="primary" (click)="openAddDialog()">
+    <mat-icon>add</mat-icon> Add Category
+  </button>
+</mat-toolbar>
+
+<div class="content">
+  <div *ngIf="loading" class="loading-container">
+    <mat-spinner diameter="40"></mat-spinner>
+  </div>
+
+  <div *ngIf="!loading && categories.length === 0" class="empty-state">
+    <mat-icon>folder_open</mat-icon>
+    <p>No categories yet. Create your first category to organize your todos.</p>
+  </div>
+
+  <table *ngIf="!loading && categories.length > 0" mat-table [dataSource]="categories" class="mat-elevation-z2">
+
+    <ng-container matColumnDef="name">
+      <th mat-header-cell *matHeaderCellDef>Name</th>
+      <td mat-cell *matCellDef="let cat">{{ cat.name }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="todoCount">
+      <th mat-header-cell *matHeaderCellDef>Todo Count</th>
+      <td mat-cell *matCellDef="let cat">{{ cat.todoCount }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="createdAt">
+      <th mat-header-cell *matHeaderCellDef>Created</th>
+      <td mat-cell *matCellDef="let cat">{{ cat.createdAt | date:'mediumDate' }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="actions">
+      <th mat-header-cell *matHeaderCellDef>Actions</th>
+      <td mat-cell *matCellDef="let cat">
+        <button mat-icon-button color="primary" (click)="openEditDialog(cat)" matTooltip="Edit">
+          <mat-icon>edit</mat-icon>
+        </button>
+        <button mat-icon-button color="warn" (click)="deleteCategory(cat)" matTooltip="Delete">
+          <mat-icon>delete</mat-icon>
+        </button>
+      </td>
+    </ng-container>
+
+    <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+    <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+  </table>
+</div>

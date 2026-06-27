@@ -21,6 +21,10 @@ node_modules/
 .env.local
 .env.*.local
 
+## Runtime logs
+api-server.log
+api-server-err.log
+
 ## IDE
 .vs/
 .idea/

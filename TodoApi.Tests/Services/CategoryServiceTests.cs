@@ -1,6 +1,7 @@
 using Cartographer.Core.Abstractions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 using Moq;
 using System.Security.Claims;
 using TodoApi.Data;
@@ -53,7 +54,7 @@ public class CategoryServiceTests
     public async Task CreateAsync_WithValidRequest_ReturnsCategoryResponse()
     {
         using var db = CreateDbContext();
-        var service = new CategoryService(db, _mapper.Object, _httpContextAccessor.Object);
+        var service = new CategoryService(db, _mapper.Object, _httpContextAccessor.Object, Mock.Of<ILogger<CategoryService>>());
 
         var result = await service.CreateAsync(new CategoryRequest { Name = "Work" });
 
@@ -70,7 +71,7 @@ public class CategoryServiceTests
         db.Categories.Add(new Category { Id = Guid.NewGuid(), Name = "Work", UserId = TestUserId, CreatedAt = DateTime.UtcNow });
         await db.SaveChangesAsync();
 
-        var service = new CategoryService(db, _mapper.Object, _httpContextAccessor.Object);
+        var service = new CategoryService(db, _mapper.Object, _httpContextAccessor.Object, Mock.Of<ILogger<CategoryService>>());
 
         var exception = await Assert.ThrowsAsync<FluentResponse.Exceptions.ConflictException>(() =>
             service.CreateAsync(new CategoryRequest { Name = "work" }));
@@ -88,7 +89,7 @@ public class CategoryServiceTests
         );
         await db.SaveChangesAsync();
 
-        var service = new CategoryService(db, _mapper.Object, _httpContextAccessor.Object);
+        var service = new CategoryService(db, _mapper.Object, _httpContextAccessor.Object, Mock.Of<ILogger<CategoryService>>());
 
         var result = await service.GetAllAsync();
 
@@ -101,7 +102,7 @@ public class CategoryServiceTests
     public async Task GetAllAsync_WithNoCategories_ReturnsEmptyList()
     {
         using var db = CreateDbContext();
-        var service = new CategoryService(db, _mapper.Object, _httpContextAccessor.Object);
+        var service = new CategoryService(db, _mapper.Object, _httpContextAccessor.Object, Mock.Of<ILogger<CategoryService>>());
 
         var result = await service.GetAllAsync();
 
@@ -118,7 +119,7 @@ public class CategoryServiceTests
         );
         await db.SaveChangesAsync();
 
-        var service = new CategoryService(db, _mapper.Object, _httpContextAccessor.Object);
+        var service = new CategoryService(db, _mapper.Object, _httpContextAccessor.Object, Mock.Of<ILogger<CategoryService>>());
 
         var result = await service.GetAllAsync();
 
@@ -134,7 +135,7 @@ public class CategoryServiceTests
         db.Categories.Add(category);
         await db.SaveChangesAsync();
 
-        var service = new CategoryService(db, _mapper.Object, _httpContextAccessor.Object);
+        var service = new CategoryService(db, _mapper.Object, _httpContextAccessor.Object, Mock.Of<ILogger<CategoryService>>());
 
         var result = await service.UpdateAsync(category.Id, new CategoryRequest { Name = "Renamed" });
 
@@ -150,7 +151,7 @@ public class CategoryServiceTests
         db.Categories.Add(new Category { Id = Guid.NewGuid(), Name = "Personal", UserId = TestUserId, CreatedAt = DateTime.UtcNow });
         await db.SaveChangesAsync();
 
-        var service = new CategoryService(db, _mapper.Object, _httpContextAccessor.Object);
+        var service = new CategoryService(db, _mapper.Object, _httpContextAccessor.Object, Mock.Of<ILogger<CategoryService>>());
 
         var exception = await Assert.ThrowsAsync<FluentResponse.Exceptions.ConflictException>(() =>
             service.UpdateAsync(category.Id, new CategoryRequest { Name = "personal" }));
@@ -162,7 +163,7 @@ public class CategoryServiceTests
     public async Task UpdateAsync_WithNonExistentId_ThrowsNotFoundException()
     {
         using var db = CreateDbContext();
-        var service = new CategoryService(db, _mapper.Object, _httpContextAccessor.Object);
+        var service = new CategoryService(db, _mapper.Object, _httpContextAccessor.Object, Mock.Of<ILogger<CategoryService>>());
 
         await Assert.ThrowsAsync<FluentResponse.Exceptions.NotFoundException>(() =>
             service.UpdateAsync(Guid.NewGuid(), new CategoryRequest { Name = "Nope" }));
@@ -176,7 +177,7 @@ public class CategoryServiceTests
         db.Categories.Add(category);
         await db.SaveChangesAsync();
 
-        var service = new CategoryService(db, _mapper.Object, _httpContextAccessor.Object);
+        var service = new CategoryService(db, _mapper.Object, _httpContextAccessor.Object, Mock.Of<ILogger<CategoryService>>());
 
         await service.DeleteAsync(category.Id);
 
@@ -200,7 +201,7 @@ public class CategoryServiceTests
         });
         await db.SaveChangesAsync();
 
-        var service = new CategoryService(db, _mapper.Object, _httpContextAccessor.Object);
+        var service = new CategoryService(db, _mapper.Object, _httpContextAccessor.Object, Mock.Of<ILogger<CategoryService>>());
 
         var exception = await Assert.ThrowsAsync<FluentResponse.Exceptions.ConflictException>(() =>
             service.DeleteAsync(categoryId));
@@ -212,7 +213,7 @@ public class CategoryServiceTests
     public async Task DeleteAsync_WithNonExistentId_ThrowsNotFoundException()
     {
         using var db = CreateDbContext();
-        var service = new CategoryService(db, _mapper.Object, _httpContextAccessor.Object);
+        var service = new CategoryService(db, _mapper.Object, _httpContextAccessor.Object, Mock.Of<ILogger<CategoryService>>());
 
         await Assert.ThrowsAsync<FluentResponse.Exceptions.NotFoundException>(() =>
             service.DeleteAsync(Guid.NewGuid()));

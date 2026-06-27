@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using Moq;
 using TodoApi.Models.DTOs.Auth;
 using TodoApi.Services;
@@ -38,7 +39,7 @@ public class AuthServiceTests
         _userManager.Setup(x => x.CreateAsync(It.IsAny<IdentityUser>(), "password123"))
             .ReturnsAsync(IdentityResult.Success);
 
-        var service = new AuthService(_userManager.Object, _configuration);
+        var service = new AuthService(_userManager.Object, _configuration, Mock.Of<ILogger<AuthService>>());
 
         var result = await service.RegisterAsync(new RegisterRequest
         {
@@ -59,7 +60,7 @@ public class AuthServiceTests
         _userManager.Setup(x => x.FindByNameAsync("existing"))
             .ReturnsAsync(existingUser);
 
-        var service = new AuthService(_userManager.Object, _configuration);
+        var service = new AuthService(_userManager.Object, _configuration, Mock.Of<ILogger<AuthService>>());
 
         var exception = await Assert.ThrowsAsync<FluentResponse.Exceptions.ConflictException>(() =>
             service.RegisterAsync(new RegisterRequest
@@ -81,7 +82,7 @@ public class AuthServiceTests
             .ReturnsAsync(IdentityResult.Failed(
                 new IdentityError { Description = "Passwords must be at least 6 characters" }));
 
-        var service = new AuthService(_userManager.Object, _configuration);
+        var service = new AuthService(_userManager.Object, _configuration, Mock.Of<ILogger<AuthService>>());
 
         var exception = await Assert.ThrowsAsync<FluentResponse.Exceptions.BusinessException>(() =>
             service.RegisterAsync(new RegisterRequest
@@ -102,7 +103,7 @@ public class AuthServiceTests
         _userManager.Setup(x => x.CheckPasswordAsync(user, "correctpassword"))
             .ReturnsAsync(true);
 
-        var service = new AuthService(_userManager.Object, _configuration);
+        var service = new AuthService(_userManager.Object, _configuration, Mock.Of<ILogger<AuthService>>());
 
         var result = await service.LoginAsync(new LoginRequest
         {
@@ -121,7 +122,7 @@ public class AuthServiceTests
         _userManager.Setup(x => x.FindByNameAsync("unknown"))
             .ReturnsAsync((IdentityUser?)null);
 
-        var service = new AuthService(_userManager.Object, _configuration);
+        var service = new AuthService(_userManager.Object, _configuration, Mock.Of<ILogger<AuthService>>());
 
         var exception = await Assert.ThrowsAsync<FluentResponse.Exceptions.UnauthorizedException>(() =>
             service.LoginAsync(new LoginRequest
@@ -142,7 +143,7 @@ public class AuthServiceTests
         _userManager.Setup(x => x.CheckPasswordAsync(user, "wrongpassword"))
             .ReturnsAsync(false);
 
-        var service = new AuthService(_userManager.Object, _configuration);
+        var service = new AuthService(_userManager.Object, _configuration, Mock.Of<ILogger<AuthService>>());
 
         var exception = await Assert.ThrowsAsync<FluentResponse.Exceptions.UnauthorizedException>(() =>
             service.LoginAsync(new LoginRequest

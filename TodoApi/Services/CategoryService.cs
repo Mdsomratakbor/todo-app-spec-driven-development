@@ -14,12 +14,14 @@ public class CategoryService : ICategoryService
     private readonly AppDbContext _db;
     private readonly IMapper _mapper;
     private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly ILogger<CategoryService> _logger;
 
-    public CategoryService(AppDbContext db, IMapper mapper, IHttpContextAccessor httpContextAccessor)
+    public CategoryService(AppDbContext db, IMapper mapper, IHttpContextAccessor httpContextAccessor, ILogger<CategoryService> logger)
     {
         _db = db;
         _mapper = mapper;
         _httpContextAccessor = httpContextAccessor;
+        _logger = logger;
     }
 
     private string CurrentUserId =>
@@ -34,6 +36,7 @@ public class CategoryService : ICategoryService
 
         if (existing)
         {
+            _logger.LogWarning("User {UserId} attempted to create duplicate category {CategoryName}", userId, request.Name);
             throw new ConflictException("A category with this name already exists");
         }
 
@@ -47,6 +50,8 @@ public class CategoryService : ICategoryService
 
         _db.Categories.Add(category);
         await _db.SaveChangesAsync();
+
+        _logger.LogInformation("User {UserId} created category {CategoryId} ({CategoryName})", userId, category.Id, category.Name);
 
         var response = _mapper.Map<CategoryResponse>(category);
         response.TodoCount = 0;
@@ -62,6 +67,7 @@ public class CategoryService : ICategoryService
 
         if (category == null)
         {
+            _logger.LogWarning("User {UserId} attempted to update non-existent category {CategoryId}", userId, id);
             throw new NotFoundException("Category not found");
         }
 
@@ -70,11 +76,14 @@ public class CategoryService : ICategoryService
 
         if (duplicate)
         {
+            _logger.LogWarning("User {UserId} attempted to rename category {CategoryId} to duplicate name {CategoryName}", userId, id, request.Name);
             throw new ConflictException("A category with this name already exists");
         }
 
         category.Name = request.Name;
         await _db.SaveChangesAsync();
+
+        _logger.LogInformation("User {UserId} updated category {CategoryId} to {CategoryName}", userId, id, category.Name);
 
         var response = _mapper.Map<CategoryResponse>(category);
         response.TodoCount = await _db.Todos.CountAsync(t => t.CategoryId == id && t.UserId == userId);
@@ -90,17 +99,21 @@ public class CategoryService : ICategoryService
 
         if (category == null)
         {
+            _logger.LogWarning("User {UserId} attempted to delete non-existent category {CategoryId}", userId, id);
             throw new NotFoundException("Category not found");
         }
 
         var todoCount = await _db.Todos.CountAsync(t => t.CategoryId == id && t.UserId == userId);
         if (todoCount > 0)
         {
+            _logger.LogWarning("User {UserId} attempted to delete category {CategoryId} with {TodoCount} associated todos", userId, id, todoCount);
             throw new ConflictException($"Category has {todoCount} associated todo(s). Remove or reassign them before deleting.");
         }
 
         _db.Categories.Remove(category);
         await _db.SaveChangesAsync();
+
+        _logger.LogInformation("User {UserId} deleted category {CategoryId}", userId, id);
     }
 
     public async Task<List<CategoryResponse>> GetAllAsync()
@@ -124,6 +137,8 @@ public class CategoryService : ICategoryService
             r.TodoCount = todoCounts.GetValueOrDefault(c.Id, 0);
             return r;
         }).ToList();
+
+        _logger.LogInformation("User {UserId} listed {Count} categories", userId, responses.Count);
 
         return responses;
     }

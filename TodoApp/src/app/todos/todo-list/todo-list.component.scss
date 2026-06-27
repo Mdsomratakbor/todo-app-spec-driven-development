@@ -1,0 +1,54 @@
+.filter-bar {
+  display: flex;
+  gap: 12px;
+  align-items: baseline;
+  padding: 16px 24px 0;
+  flex-wrap: wrap;
+}
+
+.content {
+  padding: 24px;
+}
+
+.loading-container {
+  display: flex;
+  justify-content: center;
+  padding: 48px;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 48px;
+  color: var(--mat-sys-on-surface-variant);
+
+  mat-icon {
+    font-size: 48px;
+    height: 48px;
+    width: 48px;
+    margin-bottom: 16px;
+  }
+}
+
+table {
+  width: 100%;
+}
+
+.checkbox-col {
+  width: 48px;
+}
+
+.completed {
+  text-decoration: line-through;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.overdue {
+  color: var(--mat-sys-error);
+  font-weight: 500;
+}
+
+.spacer {
+  flex: 1;
+}

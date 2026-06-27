@@ -12,15 +12,18 @@ namespace TodoApi.Controllers;
 public class CategoryController : ControllerBase
 {
     private readonly ICategoryService _categoryService;
+    private readonly ILogger<CategoryController> _logger;
 
-    public CategoryController(ICategoryService categoryService)
+    public CategoryController(ICategoryService categoryService, ILogger<CategoryController> logger)
     {
         _categoryService = categoryService;
+        _logger = logger;
     }
 
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CategoryRequest request)
     {
+        _logger.LogInformation("Create category request received: {CategoryName}", request.Name);
         var result = await _categoryService.CreateAsync(request);
 
         var response = new ApiResponse<CategoryResponse>
@@ -36,6 +39,7 @@ public class CategoryController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetAll()
     {
+        _logger.LogDebug("List categories request received");
         var result = await _categoryService.GetAllAsync();
 
         var response = new ApiResponse<List<CategoryResponse>>
@@ -51,6 +55,7 @@ public class CategoryController : ControllerBase
     [HttpPut("{id:guid}")]
     public async Task<IActionResult> Update(Guid id, [FromBody] CategoryRequest request)
     {
+        _logger.LogInformation("Update category request for {CategoryId}: {CategoryName}", id, request.Name);
         var result = await _categoryService.UpdateAsync(id, request);
 
         var response = new ApiResponse<CategoryResponse>
@@ -66,6 +71,7 @@ public class CategoryController : ControllerBase
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> Delete(Guid id)
     {
+        _logger.LogInformation("Delete category request for {CategoryId}", id);
         await _categoryService.DeleteAsync(id);
         return NoContent();
     }

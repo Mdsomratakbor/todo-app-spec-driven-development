@@ -13,11 +13,13 @@ public class AuthService : IAuthService
 {
     private readonly UserManager<IdentityUser> _userManager;
     private readonly IConfiguration _configuration;
+    private readonly ILogger<AuthService> _logger;
 
-    public AuthService(UserManager<IdentityUser> userManager, IConfiguration configuration)
+    public AuthService(UserManager<IdentityUser> userManager, IConfiguration configuration, ILogger<AuthService> logger)
     {
         _userManager = userManager;
         _configuration = configuration;
+        _logger = logger;
     }
 
     public async Task<AuthResponse> RegisterAsync(RegisterRequest request)
@@ -25,6 +27,7 @@ public class AuthService : IAuthService
         var existingUser = await _userManager.FindByNameAsync(request.Username);
         if (existingUser != null)
         {
+            _logger.LogWarning("Registration failed: username {Username} already taken", request.Username);
             throw new ConflictException("Username is already taken");
         }
 
@@ -38,9 +41,11 @@ public class AuthService : IAuthService
         if (!result.Succeeded)
         {
             var errors = string.Join("; ", result.Errors.Select(e => e.Description));
+            _logger.LogWarning("Registration failed for {Username}: {Errors}", request.Username, errors);
             throw new BusinessException(errors);
         }
 
+        _logger.LogInformation("User {UserId} registered successfully", user.Id);
         return GenerateAuthResponse(user);
     }
 
@@ -49,9 +54,11 @@ public class AuthService : IAuthService
         var user = await _userManager.FindByNameAsync(request.Username);
         if (user == null || !await _userManager.CheckPasswordAsync(user, request.Password))
         {
+            _logger.LogWarning("Login failed for username {Username}: invalid credentials", request.Username);
             throw new UnauthorizedException("Invalid username or password");
         }
 
+        _logger.LogInformation("User {UserId} logged in successfully", user.Id);
         return GenerateAuthResponse(user);
     }
 

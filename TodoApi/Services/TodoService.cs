@@ -14,12 +14,14 @@ public class TodoService : ITodoService
     private readonly AppDbContext _db;
     private readonly IMapper _mapper;
     private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly ILogger<TodoService> _logger;
 
-    public TodoService(AppDbContext db, IMapper mapper, IHttpContextAccessor httpContextAccessor)
+    public TodoService(AppDbContext db, IMapper mapper, IHttpContextAccessor httpContextAccessor, ILogger<TodoService> logger)
     {
         _db = db;
         _mapper = mapper;
         _httpContextAccessor = httpContextAccessor;
+        _logger = logger;
     }
 
     private string CurrentUserId =>
@@ -36,6 +38,7 @@ public class TodoService : ITodoService
 
             if (!categoryExists)
             {
+                _logger.LogWarning("User {UserId} attempted to create todo with non-existent category {CategoryId}", userId, request.CategoryId);
                 throw new NotFoundException("Category not found");
             }
         }
@@ -59,6 +62,8 @@ public class TodoService : ITodoService
 
         await _db.Entry(todo).Reference(t => t.Category).LoadAsync();
 
+        _logger.LogInformation("User {UserId} created todo {TodoId}: {TodoTitle}", userId, todo.Id, todo.Title);
+
         return _mapper.Map<TodoResponse>(todo);
     }
 
@@ -72,6 +77,7 @@ public class TodoService : ITodoService
 
         if (todo == null)
         {
+            _logger.LogWarning("User {UserId} requested non-existent todo {TodoId}", userId, id);
             throw new NotFoundException("Todo not found");
         }
 
@@ -88,6 +94,8 @@ public class TodoService : ITodoService
             .OrderByDescending(t => t.CreatedAt)
             .ToListAsync();
 
+        _logger.LogInformation("User {UserId} listed {Count} todos", userId, todos.Count);
+
         return todos.Select(t => _mapper.Map<TodoResponse>(t)).ToList();
     }
 
@@ -101,24 +109,16 @@ public class TodoService : ITodoService
             .AsQueryable();
 
         if (filter.IsCompleted.HasValue)
-        {
             query = query.Where(t => t.IsCompleted == filter.IsCompleted.Value);
-        }
 
         if (filter.CategoryId.HasValue)
-        {
             query = query.Where(t => t.CategoryId == filter.CategoryId.Value);
-        }
 
         if (filter.DueBefore.HasValue)
-        {
             query = query.Where(t => t.DueDate <= filter.DueBefore.Value);
-        }
 
         if (filter.DueAfter.HasValue)
-        {
             query = query.Where(t => t.DueDate >= filter.DueAfter.Value);
-        }
 
         if (!string.IsNullOrWhiteSpace(filter.Search))
         {
@@ -131,6 +131,9 @@ public class TodoService : ITodoService
         var todos = await query
             .OrderByDescending(t => t.CreatedAt)
             .ToListAsync();
+
+        _logger.LogInformation("User {UserId} searched todos with filters - completed:{IsCompleted} category:{CategoryId} search:{Search} -> {Count} results",
+            userId, filter.IsCompleted, filter.CategoryId, filter.Search, todos.Count);
 
         return todos.Select(t => _mapper.Map<TodoResponse>(t)).ToList();
     }
@@ -145,6 +148,7 @@ public class TodoService : ITodoService
 
         if (todo == null)
         {
+            _logger.LogWarning("User {UserId} attempted to update non-existent todo {TodoId}", userId, id);
             throw new NotFoundException("Todo not found");
         }
 
@@ -158,19 +162,13 @@ public class TodoService : ITodoService
         }
 
         if (request.Description != null)
-        {
             todo.Description = request.Description;
-        }
 
         if (request.DueDate != null)
-        {
             todo.DueDate = request.DueDate;
-        }
 
         if (request.IsCompleted.HasValue)
-        {
             todo.IsCompleted = request.IsCompleted.Value;
-        }
 
         if (request.CategoryId != null)
         {
@@ -181,6 +179,7 @@ public class TodoService : ITodoService
 
                 if (!categoryExists)
                 {
+                    _logger.LogWarning("User {UserId} attempted to update todo {TodoId} with non-existent category {CategoryId}", userId, id, request.CategoryId);
                     throw new NotFoundException("Category not found");
                 }
             }
@@ -191,6 +190,8 @@ public class TodoService : ITodoService
         await _db.SaveChangesAsync();
 
         await _db.Entry(todo).Reference(t => t.Category).LoadAsync();
+
+        _logger.LogInformation("User {UserId} updated todo {TodoId}", userId, id);
 
         return _mapper.Map<TodoResponse>(todo);
     }
@@ -204,10 +205,13 @@ public class TodoService : ITodoService
 
         if (todo == null)
         {
+            _logger.LogWarning("User {UserId} attempted to delete non-existent todo {TodoId}", userId, id);
             throw new NotFoundException("Todo not found");
         }
 
         _db.Todos.Remove(todo);
         await _db.SaveChangesAsync();
+
+        _logger.LogInformation("User {UserId} deleted todo {TodoId}", userId, id);
     }
 }

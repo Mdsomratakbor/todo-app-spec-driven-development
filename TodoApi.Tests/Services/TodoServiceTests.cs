@@ -1,6 +1,7 @@
 using Cartographer.Core.Abstractions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Moq;
 using System.Security.Claims;
 using TodoApi.Data;
@@ -57,7 +58,7 @@ public class TodoServiceTests
     public async Task CreateAsync_WithTitleOnly_ReturnsTodoResponse()
     {
         using var db = CreateDbContext();
-        var service = new TodoService(db, _mapper.Object, _httpContextAccessor.Object);
+        var service = new TodoService(db, _mapper.Object, _httpContextAccessor.Object, Mock.Of<ILogger<TodoService>>());
 
         var result = await service.CreateAsync(new TodoRequest { Title = "Buy groceries" });
 
@@ -77,7 +78,7 @@ public class TodoServiceTests
         db.Categories.Add(new Category { Id = categoryId, Name = "Personal", UserId = TestUserId, CreatedAt = DateTime.UtcNow });
         await db.SaveChangesAsync();
 
-        var service = new TodoService(db, _mapper.Object, _httpContextAccessor.Object);
+        var service = new TodoService(db, _mapper.Object, _httpContextAccessor.Object, Mock.Of<ILogger<TodoService>>());
 
         var result = await service.CreateAsync(new TodoRequest
         {
@@ -97,7 +98,7 @@ public class TodoServiceTests
     public async Task CreateAsync_WithNonExistentCategory_ThrowsNotFoundException()
     {
         using var db = CreateDbContext();
-        var service = new TodoService(db, _mapper.Object, _httpContextAccessor.Object);
+        var service = new TodoService(db, _mapper.Object, _httpContextAccessor.Object, Mock.Of<ILogger<TodoService>>());
 
         await Assert.ThrowsAsync<FluentResponse.Exceptions.NotFoundException>(() =>
             service.CreateAsync(new TodoRequest
@@ -122,7 +123,7 @@ public class TodoServiceTests
         });
         await db.SaveChangesAsync();
 
-        var service = new TodoService(db, _mapper.Object, _httpContextAccessor.Object);
+        var service = new TodoService(db, _mapper.Object, _httpContextAccessor.Object, Mock.Of<ILogger<TodoService>>());
 
         var result = await service.GetByIdAsync(todoId);
 
@@ -133,7 +134,7 @@ public class TodoServiceTests
     public async Task GetByIdAsync_WithNonExistentId_ThrowsNotFoundException()
     {
         using var db = CreateDbContext();
-        var service = new TodoService(db, _mapper.Object, _httpContextAccessor.Object);
+        var service = new TodoService(db, _mapper.Object, _httpContextAccessor.Object, Mock.Of<ILogger<TodoService>>());
 
         await Assert.ThrowsAsync<FluentResponse.Exceptions.NotFoundException>(() =>
             service.GetByIdAsync(Guid.NewGuid()));
@@ -154,7 +155,7 @@ public class TodoServiceTests
         });
         await db.SaveChangesAsync();
 
-        var service = new TodoService(db, _mapper.Object, _httpContextAccessor.Object);
+        var service = new TodoService(db, _mapper.Object, _httpContextAccessor.Object, Mock.Of<ILogger<TodoService>>());
 
         await Assert.ThrowsAsync<FluentResponse.Exceptions.NotFoundException>(() =>
             service.GetByIdAsync(todoId));
@@ -169,7 +170,7 @@ public class TodoServiceTests
         db.Todos.AddRange(older, newer);
         await db.SaveChangesAsync();
 
-        var service = new TodoService(db, _mapper.Object, _httpContextAccessor.Object);
+        var service = new TodoService(db, _mapper.Object, _httpContextAccessor.Object, Mock.Of<ILogger<TodoService>>());
 
         var result = await service.GetAllAsync();
 
@@ -186,7 +187,7 @@ public class TodoServiceTests
         db.Todos.Add(new Todo { Id = Guid.NewGuid(), Title = "Theirs", UserId = "other-user", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow });
         await db.SaveChangesAsync();
 
-        var service = new TodoService(db, _mapper.Object, _httpContextAccessor.Object);
+        var service = new TodoService(db, _mapper.Object, _httpContextAccessor.Object, Mock.Of<ILogger<TodoService>>());
 
         var result = await service.GetAllAsync();
 
@@ -204,7 +205,7 @@ public class TodoServiceTests
         db.Todos.Add(new Todo { Id = Guid.NewGuid(), Title = "Buy milk", IsCompleted = false, UserId = TestUserId, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow });
         await db.SaveChangesAsync();
 
-        var service = new TodoService(db, _mapper.Object, _httpContextAccessor.Object);
+        var service = new TodoService(db, _mapper.Object, _httpContextAccessor.Object, Mock.Of<ILogger<TodoService>>());
 
         var result = await service.GetAllAsync(new TodoFilterRequest { IsCompleted = true });
 
@@ -220,7 +221,7 @@ public class TodoServiceTests
         db.Todos.Add(new Todo { Id = Guid.NewGuid(), Title = "Team meeting", UserId = TestUserId, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow });
         await db.SaveChangesAsync();
 
-        var service = new TodoService(db, _mapper.Object, _httpContextAccessor.Object);
+        var service = new TodoService(db, _mapper.Object, _httpContextAccessor.Object, Mock.Of<ILogger<TodoService>>());
 
         var result = await service.GetAllAsync(new TodoFilterRequest { Search = "grocery" });
 
@@ -236,7 +237,7 @@ public class TodoServiceTests
         db.Todos.Add(new Todo { Id = Guid.NewGuid(), Title = "Task B", UserId = TestUserId, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow });
         await db.SaveChangesAsync();
 
-        var service = new TodoService(db, _mapper.Object, _httpContextAccessor.Object);
+        var service = new TodoService(db, _mapper.Object, _httpContextAccessor.Object, Mock.Of<ILogger<TodoService>>());
 
         var result = await service.GetAllAsync(new TodoFilterRequest { Search = "budgeting" });
 
@@ -247,7 +248,7 @@ public class TodoServiceTests
     public async Task GetAllAsync_WithNoResults_ReturnsEmptyList()
     {
         using var db = CreateDbContext();
-        var service = new TodoService(db, _mapper.Object, _httpContextAccessor.Object);
+        var service = new TodoService(db, _mapper.Object, _httpContextAccessor.Object, Mock.Of<ILogger<TodoService>>());
 
         var result = await service.GetAllAsync(new TodoFilterRequest { IsCompleted = true });
 
@@ -270,7 +271,7 @@ public class TodoServiceTests
         });
         await db.SaveChangesAsync();
 
-        var service = new TodoService(db, _mapper.Object, _httpContextAccessor.Object);
+        var service = new TodoService(db, _mapper.Object, _httpContextAccessor.Object, Mock.Of<ILogger<TodoService>>());
 
         var result = await service.UpdateAsync(todoId, new TodoUpdateRequest
         {
@@ -286,7 +287,7 @@ public class TodoServiceTests
     public async Task UpdateAsync_WithNonExistentId_ThrowsNotFoundException()
     {
         using var db = CreateDbContext();
-        var service = new TodoService(db, _mapper.Object, _httpContextAccessor.Object);
+        var service = new TodoService(db, _mapper.Object, _httpContextAccessor.Object, Mock.Of<ILogger<TodoService>>());
 
         await Assert.ThrowsAsync<FluentResponse.Exceptions.NotFoundException>(() =>
             service.UpdateAsync(Guid.NewGuid(), new TodoUpdateRequest { Title = "Nope" }));
@@ -307,7 +308,7 @@ public class TodoServiceTests
         });
         await db.SaveChangesAsync();
 
-        var service = new TodoService(db, _mapper.Object, _httpContextAccessor.Object);
+        var service = new TodoService(db, _mapper.Object, _httpContextAccessor.Object, Mock.Of<ILogger<TodoService>>());
 
         await service.DeleteAsync(todoId);
 
@@ -318,7 +319,7 @@ public class TodoServiceTests
     public async Task DeleteAsync_WithNonExistentId_ThrowsNotFoundException()
     {
         using var db = CreateDbContext();
-        var service = new TodoService(db, _mapper.Object, _httpContextAccessor.Object);
+        var service = new TodoService(db, _mapper.Object, _httpContextAccessor.Object, Mock.Of<ILogger<TodoService>>());
 
         await Assert.ThrowsAsync<FluentResponse.Exceptions.NotFoundException>(() =>
             service.DeleteAsync(Guid.NewGuid()));
@@ -340,7 +341,7 @@ public class TodoServiceTests
         });
         await db.SaveChangesAsync();
 
-        var service = new TodoService(db, _mapper.Object, _httpContextAccessor.Object);
+        var service = new TodoService(db, _mapper.Object, _httpContextAccessor.Object, Mock.Of<ILogger<TodoService>>());
 
         var result = await service.UpdateAsync(todoId, new TodoUpdateRequest { IsCompleted = true });
 
@@ -364,7 +365,7 @@ public class TodoServiceTests
         });
         await db.SaveChangesAsync();
 
-        var service = new TodoService(db, _mapper.Object, _httpContextAccessor.Object);
+        var service = new TodoService(db, _mapper.Object, _httpContextAccessor.Object, Mock.Of<ILogger<TodoService>>());
 
         var result = await service.UpdateAsync(todoId, new TodoUpdateRequest { CategoryId = categoryId });
 
@@ -390,7 +391,7 @@ public class TodoServiceTests
         });
         await db.SaveChangesAsync();
 
-        var service = new TodoService(db, _mapper.Object, _httpContextAccessor.Object);
+        var service = new TodoService(db, _mapper.Object, _httpContextAccessor.Object, Mock.Of<ILogger<TodoService>>());
 
         var result = await service.UpdateAsync(todoId, new TodoUpdateRequest { CategoryId = Guid.Empty });
 
@@ -413,7 +414,7 @@ public class TodoServiceTests
         });
         await db.SaveChangesAsync();
 
-        var service = new TodoService(db, _mapper.Object, _httpContextAccessor.Object);
+        var service = new TodoService(db, _mapper.Object, _httpContextAccessor.Object, Mock.Of<ILogger<TodoService>>());
 
         await Assert.ThrowsAsync<FluentResponse.Exceptions.NotFoundException>(() =>
             service.UpdateAsync(todoId, new TodoUpdateRequest { CategoryId = Guid.NewGuid() }));
@@ -431,7 +432,7 @@ public class TodoServiceTests
         db.Todos.Add(new Todo { Id = Guid.NewGuid(), Title = "In B", CategoryId = catB, UserId = TestUserId, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow });
         await db.SaveChangesAsync();
 
-        var service = new TodoService(db, _mapper.Object, _httpContextAccessor.Object);
+        var service = new TodoService(db, _mapper.Object, _httpContextAccessor.Object, Mock.Of<ILogger<TodoService>>());
 
         var result = await service.GetAllAsync(new TodoFilterRequest { CategoryId = catA });
 
@@ -448,7 +449,7 @@ public class TodoServiceTests
         db.Todos.Add(new Todo { Id = Guid.NewGuid(), Title = "No due", UserId = TestUserId, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow });
         await db.SaveChangesAsync();
 
-        var service = new TodoService(db, _mapper.Object, _httpContextAccessor.Object);
+        var service = new TodoService(db, _mapper.Object, _httpContextAccessor.Object, Mock.Of<ILogger<TodoService>>());
 
         var result = await service.GetAllAsync(new TodoFilterRequest
         {
@@ -499,7 +500,7 @@ public class TodoServiceTests
         });
         await db.SaveChangesAsync();
 
-        var service = new TodoService(db, _mapper.Object, _httpContextAccessor.Object);
+        var service = new TodoService(db, _mapper.Object, _httpContextAccessor.Object, Mock.Of<ILogger<TodoService>>());
 
         var result = await service.GetAllAsync(new TodoFilterRequest
         {

@@ -2,7 +2,9 @@ using System.Text;
 using Cartographer.Core.DependencyInjection;
 using FluentResponse.Extensions;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using TodoApi.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -22,6 +24,17 @@ builder.Services.AddCartographer(cfg =>
     cfg.MaxDepth = 3;
     new TodoApi.Models.Mappings.MappingProfile().Apply(cfg);
 });
+
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+builder.Services.AddIdentityCore<Microsoft.AspNetCore.Identity.IdentityUser>()
+    .AddEntityFrameworkStores<AppDbContext>();
+
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<TodoApi.Services.Interfaces.IAuthService, TodoApi.Services.AuthService>();
+builder.Services.AddScoped<TodoApi.Services.Interfaces.ICategoryService, TodoApi.Services.CategoryService>();
+builder.Services.AddScoped<TodoApi.Services.Interfaces.ITodoService, TodoApi.Services.TodoService>();
 
 builder.Services.AddFluentResponse();
 
@@ -46,6 +59,10 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     });
 
 var app = builder.Build();
+
+var logger = app.Services.GetRequiredService<ILogger<Program>>();
+logger.LogInformation("Application starting with environment: {Env}", app.Environment.EnvironmentName);
+logger.LogInformation("CORS policy {CorsPolicy} configured for {CorsOrigin}", "AllowAngularDev", "http://localhost:4200");
 
 app.UseHttpsRedirection();
 

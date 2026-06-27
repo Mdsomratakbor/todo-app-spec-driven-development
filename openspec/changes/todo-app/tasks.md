@@ -300,31 +300,31 @@
 
 ## 10. Validation & Final Integration
 
-### Task 10.1 — End-to-end test: Authentication flow
+### Task 10.1 — End-to-end test: Authentication flow [x]
 - **Requirement**: REQ-AUTH-001 (all 3 scenarios), REQ-AUTH-002 (both scenarios)
 - **Dependencies**: 3.5, 7.3, 7.4
 - **Definition of Done**: Manual test: Register new user — success. Register same user again — 409 error. Register with short password — 400 error. Login with valid credentials — JWT returned. Login with wrong password — 401 error. Protected endpoint without token — 401 error.
 - **Deliverables**: Test results (documented or screenshots)
 
-### Task 10.2 — End-to-end test: Categories CRUD
+### Task 10.2 — End-to-end test: Categories CRUD [x]
 - **Requirement**: REQ-CAT-001 (all 3 scenarios), REQ-CAT-002, REQ-CAT-003, REQ-CAT-004 (all 3 scenarios)
 - **Dependencies**: 4.5, 8.4
 - **Definition of Done**: Manual test: Create category — success. Create duplicate — 409. List categories — shows created. Update name — success. Create todo in category. Delete category with todo — 409. Delete category without todos — 204. Delete non-existent — 404.
 - **Deliverables**: Test results (documented or screenshots)
 
-### Task 10.3 — End-to-end test: Todos CRUD
+### Task 10.3 — End-to-end test: Todos CRUD [x]
 - **Requirement**: REQ-TODO-001 (all 3 scenarios), REQ-TODO-003 (all 3 scenarios), REQ-TODO-004 (both scenarios), REQ-TODO-005 (both scenarios)
 - **Dependencies**: 5.7, 9.5, 9.6
 - **Definition of Done**: Manual test: Create todo without category — success. Create with all fields — success. Create without title — 400. Get by ID — success. Get non-existent — 404. Get another user's todo — 404. Update fields — success. Update non-existent — 404. Delete — 204. Delete non-existent — 404.
 - **Deliverables**: Test results (documented or screenshots)
 
-### Task 10.4 — End-to-end test: Todo filters
+### Task 10.4 — End-to-end test: Todo filters [x]
 - **Requirement**: REQ-TODO-002 (all 6 filter scenarios)
 - **Dependencies**: 5.5, 9.3
 - **Definition of Done**: Manual test: List all — returns all user's todos. Filter by completed — only completed shown. Filter by category — only category matches. Filter by date range — correct range. Search by text — matches title/description. Combined filters — AND logic working.
 - **Deliverables**: Test results (documented or screenshots)
 
-### Task 10.5 — Spec coverage verification
+### Task 10.5 — Spec coverage verification [x]
 - **Requirement**: All
 - **Dependencies**: 10.1, 10.2, 10.3, 10.4
 - **Definition of Done**: Every scenario from all 3 spec files maps to at least one passing test. Missing coverage documented as gaps for future iterations. Traceability matrix created or confirmed.

@@ -538,6 +538,18 @@ public class TodoServiceTests
     }
 
     [Fact]
+    public async Task CreateAsync_WithInvalidPriority_ThrowsBusinessException()
+    {
+        using var db = CreateDbContext();
+        var service = new TodoService(db, _mapper.Object, _httpContextAccessor.Object, Mock.Of<ILogger<TodoService>>());
+
+        var ex = await Assert.ThrowsAsync<FluentResponse.Exceptions.BusinessException>(() =>
+            service.CreateAsync(new TodoRequest { Title = "Test", Priority = "urgent" }));
+
+        Assert.Contains("must be one of", ex.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public async Task UpdateAsync_ChangesPriority()
     {
         using var db = CreateDbContext();
